@@ -1,0 +1,596 @@
+/* =============== Global =============== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #f3f4f6;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =============== Header =============== */
+
+.app-header {
+  width: 100%;
+  padding: 12px 32px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.header-left h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+/* Centered subtitle (only used on main page) */
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.header-center p {
+  margin: 0;
+  font-size: 15px;
+  color: #6b7280;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.welcome-text {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.logout-btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: none;
+  background: #4f46e5;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.logout-btn:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+}
+
+.secondary-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  font-size: 13px;
+  color: #4b5563;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.secondary-btn:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+/* =============== Main layout (HealthyDay main page) =============== */
+
+.app-main {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  padding: 24px 32px;
+  gap: 24px;
+}
+
+.panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  width: 100%;
+}
+
+/* Left: fridge sidebar (fixed width) */
+.fridge-panel {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Right: chat + recipes (takes remaining space) */
+.chat-panel {
+  width: 1100px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* =============== Fridge panel (shared) =============== */
+
+.fridge-panel h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.fridge-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.fridge-form input {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  background: #111827;
+  color: #f9fafb;
+}
+
+.fridge-form input::placeholder {
+  color: #9ca3af;
+}
+
+.fridge-form button {
+  padding: 10px;
+  border-radius: 999px;
+  border: none;
+  background: #16a34a;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.fridge-form button:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.fridge-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.fridge-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+}
+
+.fridge-item span {
+  color: #111827;
+}
+
+.fridge-item button {
+  border: none;
+  background: #ef4444;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.fridge-item button:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.empty {
+  color: #9ca3af;
+  font-size: 13px;
+  padding-top: 4px;
+}
+
+/* =============== Chat area =============== */
+
+.chat-box {
+  flex: 1;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+.chat-box h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.chat-message {
+  display: flex;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.chat-message.from-user {
+  justify-content: flex-end;
+}
+
+.chat-message.from-bot {
+  justify-content: flex-start;
+}
+
+.bubble {
+  max-width: 75%;
+  padding: 8px 10px;
+  border-radius: 999px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.from-user .bubble {
+  background: #4b5563;
+  color: #f9fafb;
+  border: 2px solid #1f2937;
+}
+
+.from-bot .bubble {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.chat-input-row input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  background: #111827;
+  color: #f9fafb;
+}
+
+.chat-input-row input::placeholder {
+  color: #9ca3af;
+}
+
+.chat-input-row button {
+  border-radius: 999px;
+  border: none;
+  padding: 10px 18px;
+  background: #4f46e5;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.chat-input-row button:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+}
+
+/* =============== Recipes area =============== */
+
+.recipes-panel {
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.recipes-panel h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.recipes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.recipe-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  font-size: 13px;
+  background: #f9fafb;
+}
+
+.recipe-card h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.tag {
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid #34d399;
+  font-size: 11px;
+  color: #047857;
+  background: #ecfdf3;
+}
+
+.nutrition {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 2px 0;
+}
+
+.ingredients {
+  font-size: 12px;
+  color: #4b5563;
+  margin: 2px 0;
+}
+
+.desc {
+  font-size: 12px;
+  color: #374151;
+  margin-top: 4px;
+}
+
+/* =============== Login page =============== */
+
+.login-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  z-index: 9999;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 26px 30px;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.login-title {
+  text-align: center;
+  margin-bottom: 6px;
+  font-size: 26px;
+}
+
+.login-subtitle {
+  text-align: center;
+  color: #6b7280;
+  margin-bottom: 18px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.login-label {
+  font-size: 14px;
+  color: #374151;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.login-input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 15px;
+}
+
+.login-button {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 999px;
+  border: none;
+  background: #4f46e5;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.login-button:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+}
+
+.login-hint {
+  text-align: center;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* =============== Responsive =============== */
+
+@media (max-width: 900px) {
+  .app-main {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .fridge-panel {
+    width: 100%;
+  }
+
+  .chat-panel {
+    width: 100%;
+  }
+}
+
+/* =========================================
+   Fridge Page – Fullscreen Management Page
+   Applies only when <div class="app fridge-page">
+========================================= */
+
+.app.fridge-page {
+  background: #f3f4f6;
+}
+
+/* Wrapper for fridge page main area */
+.fridge-page-main {
+  width: 1400px;
+  display: flex;
+  justify-content: center;
+  align-items: center; /* vertical center; change to flex-start if you want higher */
+  padding: 40px 0;
+}
+
+/* Outer container that controls the width of the fridge panel */
+.fridge-page-inner {
+  width: 100%;
+  max-width: 900px;
+  padding: 0 24px;
+}
+
+/* Make fridge panel big & centered on fridge page */
+.fridge-page-inner .fridge-panel {
+  width: 100%;
+  min-height: 600px;
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 36px 32px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Bigger title on fridge page */
+.fridge-page-inner .fridge-panel h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+/* Larger inputs on fridge page */
+.fridge-page-inner .fridge-form input {
+  padding: 14px 18px;
+  font-size: 16px;
+  border-radius: 12px;
+  border: 2px solid #e4e4e7;
+  background: #fafafa;
+  color: #111827;
+}
+
+.fridge-page-inner .fridge-form input::placeholder {
+  color: #9ca3af;
+}
+
+.fridge-page-inner .fridge-form input:focus {
+  border-color: #94a3b8;
+  outline: none;
+}
+
+/* Larger Add button on fridge page */
+.fridge-page-inner .fridge-form button {
+  padding: 14px;
+  font-size: 17px;
+  font-weight: 600;
+  border-radius: 14px;
+  background: #22c55e;
+  border: 2px solid #16a34a;
+  color: #ffffff;
+}
+
+/* Ingredient list on fridge page */
+.fridge-page-inner .fridge-list {
+  margin-top: 20px;
+}
+
+/* Ingredient items on fridge page */
+.fridge-page-inner .fridge-item {
+  background: #f8fafc;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+/* Delete button on fridge page */
+.fridge-page-inner .fridge-item button {
+  padding: 6px 14px;
+  font-size: 14px;
+  border-radius: 999px;
+}
+
+/* Empty state on fridge page */
+.fridge-page-inner .empty {
+  margin-top: 24px;
+  font-size: 15px;
+}
