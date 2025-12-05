@@ -8,6 +8,26 @@ function getAuthHeaders() {
   return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
 }
 
+// Helper to handle 401 errors (token expired/invalid)
+function handleAuthError() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("healthy_day_user");
+  // Redirect to login if not already there
+  if (window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
+}
+
+// Helper to check response and handle 401
+async function checkResponse(res) {
+  if (res.status === 401) {
+    handleAuthError();
+    const err = await res.json().catch(() => ({ error: "Session expired" }));
+    throw new Error(err.error || "Session expired. Please login again.");
+  }
+  return res;
+}
+
 // --- Auth ---
 
 export async function loginUser(username, password) {
@@ -53,6 +73,7 @@ export async function fetchFridge() {
   const res = await fetch(`${API_BASE}/ingredients`, {
     headers: getAuthHeaders(),
   });
+  await checkResponse(res);
   if (!res.ok) throw new Error("Failed to fetch ingredients");
   return res.json();
 }
@@ -63,6 +84,7 @@ export async function addIngredient(ingredient) {
     headers: getAuthHeaders(),
     body: JSON.stringify(ingredient),
   });
+  await checkResponse(res);
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to add ingredient");
@@ -76,6 +98,7 @@ export async function updateIngredient(id, ingredient) {
     headers: getAuthHeaders(),
     body: JSON.stringify(ingredient),
   });
+  await checkResponse(res);
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Failed to update ingredient");
@@ -88,6 +111,7 @@ export async function deleteIngredient(id) {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
+  await checkResponse(res);
   if (!res.ok) throw new Error("Failed to delete ingredient");
   return res.json();
 }
@@ -100,6 +124,7 @@ export async function searchCommonIngredients(query) {
   const res = await fetch(`${API_BASE}/common-ingredients/search?q=${encodeURIComponent(query)}`, {
     headers: getAuthHeaders(),
   });
+  await checkResponse(res);
   if (!res.ok) return [];
   return res.json();
 }
@@ -117,6 +142,7 @@ export async function fetchPreferences() {
   const res = await fetch(`${API_BASE}/preferences`, {
     headers: getAuthHeaders(),
   });
+  await checkResponse(res);
   if (!res.ok) throw new Error("Failed to fetch preferences");
   return res.json();
 }
@@ -127,29 +153,102 @@ export async function updatePreferences(prefs) {
     headers: getAuthHeaders(),
     body: JSON.stringify(prefs),
   });
+  await checkResponse(res);
   if (!res.ok) throw new Error("Failed to update preferences");
   return res.json();
 }
 
 // -----------------------------
-// Chat mock (optional)
+// Recipe Generation API (LLM)
 // -----------------------------
-export async function sendChatMessage(message) {
-  // This would be connected to an AI endpoint later
-  return {
-    reply: "Here are some ideas!",
-    recipes: [
-      {
-        id: 1,
-        name: "Chicken Salad",
-        tags: ["healthy", "high protein"],
-        calories: 350,
-        protein: 28,
-        carbs: 10,
-        fat: 18,
-        usedIngredients: ["chicken"],
-        description: "A simple fresh chicken salad.",
-      },
-    ],
-  };
+
+export async function generateRecipes(mealType = "Dinner") {
+  const res = await fetch(`${API_BASE}/recipes/generate`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ mealType }),
+  });
+  await checkResponse(res);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to generate recipes");
+  }
+  return res.json();
+}
+
+// -----------------------------
+// Voice Input / LLM Parsing API
+// -----------------------------
+
+export async function parseIngredientList(text) {
+  const res = await fetch(`${API_BASE}/ingredients/parse`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ text }),
+  });
+  await checkResponse(res);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to parse ingredients");
+  }
+  return res.json();
+}
+
+// -----------------------------
+// Nutrition Info API (LLM)
+// -----------------------------
+
+export async function getNutritionInfo(ingredientName) {
+  const res = await fetch(`${API_BASE}/ingredients/nutrition`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ name: ingredientName }),
+  });
+  await checkResponse(res);
+  if (!res.ok) {
+    const err = await res.json();
+    // Return error object instead of throwing for rate limit
+    if (res.status === 429 || err.error === "rate_limit") {
+      return { error: "rate_limit", message: err.message || "API rate limit reached" };
+    }
+    throw new Error(err.error || "Failed to get nutrition information");
+  }
+  return res.json();
+}
+
+// -----------------------------
+// Saved Recipes API
+// -----------------------------
+
+export async function getSavedRecipes() {
+  const res = await fetch(`${API_BASE}/saved-recipes`, {
+    headers: getAuthHeaders(),
+  });
+  await checkResponse(res);
+  if (!res.ok) throw new Error("Failed to fetch saved recipes");
+  return res.json();
+}
+
+export async function saveRecipe(recipe) {
+  const res = await fetch(`${API_BASE}/saved-recipes`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(recipe),
+  });
+  await checkResponse(res);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to save recipe");
+  }
+  return res.json();
+}
+
+export async function deleteSavedRecipe(id) {
+  const res = await fetch(`${API_BASE}/saved-recipes/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  await checkResponse(res);
+  if (!res.ok) throw new Error("Failed to delete saved recipe");
+  return res.json();
 }

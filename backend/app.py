@@ -4,10 +4,12 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
-from models import db, User, Ingredient, CommonIngredient, UserDefinedIngredient, UserPreference
+from models import db, User, Ingredient, CommonIngredient, UserDefinedIngredient, UserPreference, SavedRecipe
+from llm_service import generate_recipes, get_nutrition_info
 
 # Load environment variables
-load_dotenv()
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path)
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -267,6 +269,169 @@ def update_preferences():
     
     pref.save()
     return jsonify(pref.to_json()), 200
+
+# -------------------------
+# Voice Input / LLM Parsing Route
+# -------------------------
+
+@app.route('/api/ingredients/parse', methods=['POST'])
+@jwt_required()
+def parse_ingredient_list():
+    """
+    Parse natural language text (e.g., "I bought eggs, milk, and apples")
+    into structured ingredient list using LLM.
+    """
+    current_user_id = get_jwt_identity()
+    user = User.objects(id=current_user_id).first()
+    data = request.json
+    text = data.get('text', '')
+    
+    if not text:
+        return jsonify({"error": "Text is required"}), 400
+    
+    try:
+        from llm_service import parse_ingredients_from_text
+        ingredients = parse_ingredients_from_text(text)
+        return jsonify({"ingredients": ingredients}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/ingredients/nutrition', methods=['POST'])
+@jwt_required()
+def get_ingredient_nutrition():
+    """Get nutrition info for an ingredient using LLM"""
+    data = request.json
+    ingredient_name = data.get('name', '').strip()
+    
+    if not ingredient_name:
+        return jsonify({"error": "Ingredient name is required"}), 400
+    
+    try:
+        nutrition = get_nutrition_info(ingredient_name)
+        if nutrition:
+            # Check if it's a rate limit error
+            if isinstance(nutrition, dict) and nutrition.get("error") == "rate_limit":
+                return jsonify({
+                    "error": "rate_limit",
+                    "message": nutrition.get("message", "API rate limit reached. Please try again later.")
+                }), 429
+            return jsonify(nutrition), 200
+        else:
+            return jsonify({"error": "Failed to get nutrition information"}), 500
+    except Exception as e:
+        error_str = str(e)
+        if "rate_limit" in error_str.lower() or "429" in error_str:
+            return jsonify({
+                "error": "rate_limit",
+                "message": "API rate limit reached. Please try again later."
+            }), 429
+        return jsonify({"error": str(e)}), 500
+
+# -------------------------
+# Recipe Generation Routes (LLM)
+# -------------------------
+
+@app.route('/api/recipes/generate', methods=['POST'])
+@jwt_required()
+def generate_recipe():
+    """
+    Generate recipes based on user's fridge ingredients and preferences.
+    Uses Groq LLM API for intelligent recipe generation.
+    """
+    current_user_id = get_jwt_identity()
+    user = User.objects(id=current_user_id).first()
+    
+    # Get user's fridge ingredients
+    ingredients = Ingredient.objects(user=user)
+    ingredients_list = [ing.to_json() for ing in ingredients]
+    
+    if not ingredients_list:
+        return jsonify({"error": "No ingredients in your fridge. Please add some ingredients first."}), 400
+    
+    # Get user preferences
+    pref = UserPreference.objects(user=user).first()
+    if not pref:
+        pref = UserPreference(user=user)
+        pref.save()
+    
+    preferences = pref.to_json()
+    
+    # Get meal type from request
+    data = request.json or {}
+    meal_type = data.get('mealType', 'Dinner')
+    
+    try:
+        # Call LLM service to generate recipes
+        recipes = generate_recipes(ingredients_list, preferences, meal_type)
+        
+        return jsonify({
+            "recipes": recipes,
+            "count": len(recipes),
+            "message": "Recipes generated successfully!"
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": f"Failed to generate recipes: {str(e)}"}), 500
+
+# -------------------------
+# Saved Recipes Routes
+# -------------------------
+
+@app.route('/api/saved-recipes', methods=['GET'])
+@jwt_required()
+def get_saved_recipes():
+    """Get all saved recipes for the current user"""
+    current_user_id = get_jwt_identity()
+    user = User.objects(id=current_user_id).first()
+    
+    saved_recipes = SavedRecipe.objects(user=user).order_by('-saved_at')
+    return jsonify([recipe.to_json() for recipe in saved_recipes]), 200
+
+@app.route('/api/saved-recipes', methods=['POST'])
+@jwt_required()
+def save_recipe():
+    """Save a recipe to user's collection"""
+    current_user_id = get_jwt_identity()
+    user = User.objects(id=current_user_id).first()
+    data = request.json
+    
+    # Check if recipe already exists (by name and user)
+    existing = SavedRecipe.objects(user=user, name=data.get('name')).first()
+    if existing:
+        return jsonify({"error": "Recipe already saved"}), 409
+    
+    try:
+        saved_recipe = SavedRecipe(
+            user=user,
+            name=data.get('name'),
+            description=data.get('description', ''),
+            available_ingredients=data.get('available_ingredients', []),
+            missing_ingredients=data.get('missing_ingredients', []),
+            instructions=data.get('instructions', []),
+            nutrition=data.get('nutrition', {}),
+            cooking_time=data.get('cookingTime', ''),
+            difficulty=data.get('difficulty', ''),
+            tags=data.get('tags', []),
+            meal_type=data.get('mealType', '')
+        )
+        saved_recipe.save()
+        return jsonify(saved_recipe.to_json()), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/api/saved-recipes/<id>', methods=['DELETE'])
+@jwt_required()
+def delete_saved_recipe(id):
+    """Remove a saved recipe"""
+    current_user_id = get_jwt_identity()
+    user = User.objects(id=current_user_id).first()
+    
+    recipe = SavedRecipe.objects(id=id, user=user).first()
+    if not recipe:
+        return jsonify({"error": "Recipe not found"}), 404
+    
+    recipe.delete()
+    return jsonify({"message": "Recipe removed from saved"}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

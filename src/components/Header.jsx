@@ -19,7 +19,7 @@ export default function Header({ user, onLogout }) {
         <Link to="/" className={isActive("/")}>Dashboard</Link>
         <Link to="/ingredients" className={isActive("/ingredients")}>My Fridge</Link>
         <Link to="/preferences" className={isActive("/preferences")}>Preferences</Link>
-        <Link to="/menu" className={`${isActive("/menu")} btn-nav-highlight`}>
+        <Link to="/recipes" className={`${isActive("/recipes")} btn-nav-highlight`}>
           ✨ Generate Menu
         </Link>
       </nav>
@@ -31,4 +31,7 @@ export default function Header({ user, onLogout }) {
     </header>
   );
 }
+
+
+
 

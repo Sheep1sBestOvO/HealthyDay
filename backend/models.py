@@ -102,3 +102,34 @@ class UserPreference(db.Document):
             "allergies": self.allergies,
             "goals": self.health_goals
         }
+
+class SavedRecipe(db.Document):
+    """User's saved/favorited recipes"""
+    user = db.ReferenceField(User, required=True)
+    name = db.StringField(required=True)
+    description = db.StringField()
+    available_ingredients = db.ListField(db.DictField(), default=[])
+    missing_ingredients = db.ListField(db.DictField(), default=[])
+    instructions = db.ListField(db.StringField(), default=[])
+    nutrition = db.DictField(default={})  # {calories, protein, carbs, fat}
+    cooking_time = db.StringField()
+    difficulty = db.StringField()
+    tags = db.ListField(db.StringField(), default=[])
+    meal_type = db.StringField()  # Breakfast, Lunch, Dinner, Snack
+    saved_at = db.DateTimeField(default=datetime.datetime.utcnow)
+
+    def to_json(self):
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "description": self.description,
+            "available_ingredients": self.available_ingredients,
+            "missing_ingredients": self.missing_ingredients,
+            "instructions": self.instructions,
+            "nutrition": self.nutrition,
+            "cookingTime": self.cooking_time,
+            "difficulty": self.difficulty,
+            "tags": self.tags,
+            "mealType": self.meal_type,
+            "savedAt": self.saved_at.isoformat()
+        }

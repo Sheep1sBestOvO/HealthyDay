@@ -1,0 +1,165 @@
+/* Recipe Modal Styles */
+.recipe-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(4px);
+}
+
+.recipe-modal {
+  background: white;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  padding: 2rem 2rem 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: var(--text-main);
+}
+
+.modal-badges {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.modal-content {
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr; /* Ingredients | Instructions */
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .modal-content { grid-template-columns: 1fr; }
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ingredient-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ingredient-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #f9f9f9;
+}
+
+.ing-icon { margin-right: 0.8rem; font-size: 1.1rem; }
+.ing-text { flex: 1; font-size: 0.95rem; color: var(--text-main); }
+.ing-qty { color: var(--text-secondary); font-size: 0.9rem; }
+
+.status-available { color: #4CAF50; }
+.status-missing { color: #ef5350; }
+
+.instruction-step {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.step-num {
+  background: var(--color-primary);
+  color: white;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.step-text {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.modal-actions {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  background: #fafafa;
+}
+
+.btn-cook {
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  color: white;
+  padding: 0.8rem 2rem;
+  border-radius: 50px;
+  font-weight: 700;
+  border: none;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  transition: transform 0.2s;
+}
+
+.btn-cook:hover { transform: translateY(-2px); }
+
+.btn-close {
+  position: absolute;
+  top: 1.5rem; right: 1.5rem;
+  background: #f5f5f5;
+  border: none;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  color: #666;
+}
+.btn-close:hover { background: #e0e0e0; color: #333; }
+
+/* Refresh Button Style */
+.btn-refresh {
+  background: white;
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+  padding: 0.6rem 1.5rem;
+  border-radius: 50px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-refresh:hover {
+  background: #e8f5e9;
+}
+
