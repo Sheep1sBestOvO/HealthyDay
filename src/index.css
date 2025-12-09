@@ -1,12 +1,12 @@
 :root {
   /* Brand Colors - Fresh & Healthy */
-  --color-primary: #4CAF50;        /* 鲜活的绿色 */
+  --color-primary: #4CAF50;
   --color-primary-hover: #43A047;
-  --color-secondary: #81C784;      /* 浅绿色 */
-  --color-accent: #FF9800;         /* 橙色点缀（用于食谱热量等） */
+  --color-secondary: #81C784;
+  --color-accent: #FF9800;
   
   /* Backgrounds */
-  --bg-body: #F4F7F6;              /* 极淡的灰绿色背景 */
+  --bg-body: #F4F7F6;
   --bg-card: #FFFFFF;
   --bg-input: #F5F5F5;
 

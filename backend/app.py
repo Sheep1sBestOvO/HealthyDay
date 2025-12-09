@@ -3,8 +3,18 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from models import db, User, Ingredient, CommonIngredient, UserDefinedIngredient, UserPreference, SavedRecipe
+from models import (
+    db,
+    User,
+    Ingredient,
+    CommonIngredient,
+    UserDefinedIngredient,
+    UserPreference,
+    SavedRecipe,
+    DailyCalorieLog
+)
 from llm_service import generate_recipes, get_nutrition_info
 
 # Load environment variables
@@ -12,7 +22,20 @@ env_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(env_path)
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+# Enable CORS explicitly for API routes (and root) so preflight requests succeed
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "*"}, r"/": {"origins": "*"}},
+    supports_credentials=True
+)
+
+@app.after_request
+def add_cors_headers(response):
+    # Ensure preflight responses are not blocked
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    return response
 
 # MongoDB Configuration
 app.config['MONGODB_SETTINGS'] = {
@@ -269,6 +292,104 @@ def update_preferences():
     
     pref.save()
     return jsonify(pref.to_json()), 200
+
+# -------------------------
+# Calorie Tracking Routes
+# -------------------------
+
+@app.route('/api/calories', methods=['POST'])
+@jwt_required()
+def add_calorie_log():
+    """Add a calorie intake entry for the current user"""
+    current_user_id = get_jwt_identity()
+    user = User.objects(id=current_user_id).first()
+    data = request.json or {}
+
+    # Parse calories
+    try:
+        calories = float(data.get('calories', 0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid calories value"}), 400
+
+    if calories <= 0:
+        return jsonify({"error": "Calories must be greater than zero"}), 400
+
+    # Parse date (YYYY-MM-DD), default to today (UTC)
+    date_str = data.get('date')
+    if date_str:
+        try:
+            log_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+    else:
+        log_date = datetime.utcnow().date()
+
+    try:
+        log = DailyCalorieLog(
+            user=user,
+            date=log_date,
+            calories=calories,
+            meal_type=data.get('mealType', ''),
+            note=data.get('note', '')
+        )
+        log.save()
+        return jsonify(log.to_json()), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/api/calories/summary', methods=['GET'])
+@jwt_required()
+def get_calorie_summary():
+    """Get calorie totals by day within a date range (defaults to last 7 days)"""
+    current_user_id = get_jwt_identity()
+    user = User.objects(id=current_user_id).first()
+
+    today = datetime.utcnow().date()
+    end_str = request.args.get('end')
+    start_str = request.args.get('start')
+
+    # Determine date range
+    if end_str:
+        try:
+            end_date = datetime.strptime(end_str, "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"error": "Invalid end date format. Use YYYY-MM-DD"}), 400
+    else:
+        end_date = today
+
+    if start_str:
+        try:
+            start_date = datetime.strptime(start_str, "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"error": "Invalid start date format. Use YYYY-MM-DD"}), 400
+    else:
+        start_date = end_date - timedelta(days=6)
+
+    if start_date > end_date:
+        return jsonify({"error": "Start date cannot be after end date"}), 400
+
+    logs = DailyCalorieLog.objects(
+        user=user,
+        date__gte=start_date,
+        date__lte=end_date
+    ).order_by('date')
+
+    # Aggregate totals per day
+    daily_totals = {}
+    for log in logs:
+        key = log.date.isoformat()
+        daily_totals[key] = daily_totals.get(key, 0) + log.calories
+
+    daily_totals_list = [{"date": d, "calories": c} for d, c in sorted(daily_totals.items())]
+    total_calories = sum(daily_totals.values())
+
+    return jsonify({
+        "startDate": start_date.isoformat(),
+        "endDate": end_date.isoformat(),
+        "totalCalories": total_calories,
+        "dailyTotals": daily_totals_list,
+        "entries": [log.to_json() for log in logs]
+    }), 200
 
 # -------------------------
 # Voice Input / LLM Parsing Route

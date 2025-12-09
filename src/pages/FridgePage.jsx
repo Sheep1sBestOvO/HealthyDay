@@ -202,8 +202,8 @@ export default function FridgePage() {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.continuous = true; // 连续模式，用户手动控制停止
-    recognition.interimResults = true; // 显示实时识别结果
+    recognition.continuous = true;
+    recognition.interimResults = true;
     recognition.lang = 'en-US';
 
     recognition.onstart = () => {
@@ -235,9 +235,7 @@ export default function FridgePage() {
     };
 
     recognition.onend = () => {
-      // 只有在用户手动停止时才处理，如果是错误导致的停止则忽略
       if (!isRecording) {
-        // 用户手动停止，处理结果
         const finalText = finalTranscriptRef.current;
         if (finalText && finalText !== "Listening..." && !finalText.includes("Error:")) {
           handleParseTranscript(finalText);
@@ -245,7 +243,6 @@ export default function FridgePage() {
           setTranscript("");
         }
       }
-      // 如果是错误导致的停止，isRecording 仍然是 true，不处理
     };
 
     recognitionRef.current = recognition;
@@ -254,7 +251,7 @@ export default function FridgePage() {
 
   const stopVoiceInput = () => {
     if (recognitionRef.current && isRecording) {
-      setIsRecording(false); // 先设置状态，这样 onend 知道是手动停止
+      setIsRecording(false);
       recognitionRef.current.stop();
     }
   };

@@ -103,6 +103,25 @@ class UserPreference(db.Document):
             "goals": self.health_goals
         }
 
+class DailyCalorieLog(db.Document):
+    """Daily calorie intake records per user"""
+    user = db.ReferenceField(User, required=True)
+    date = db.DateField(required=True)  # YYYY-MM-DD
+    calories = db.FloatField(required=True)  # calories consumed for the entry
+    meal_type = db.StringField()  # e.g., Breakfast, Lunch, Dinner, Snack
+    note = db.StringField()
+    created_at = db.DateTimeField(default=datetime.datetime.utcnow)
+
+    def to_json(self):
+        return {
+            "id": str(self.id),
+            "date": self.date.isoformat(),
+            "calories": self.calories,
+            "mealType": self.meal_type,
+            "note": self.note,
+            "createdAt": self.created_at.isoformat()
+        }
+
 class SavedRecipe(db.Document):
     """User's saved/favorited recipes"""
     user = db.ReferenceField(User, required=True)

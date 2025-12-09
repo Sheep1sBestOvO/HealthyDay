@@ -5,3 +5,5 @@ flask-cors==4.0.0
 flask-jwt-extended==4.5.3
 python-dotenv==1.0.0
 groq==0.4.1
+# httpx 0.28+ renamed proxies->proxy; pin to keep Groq client happy
+httpx<0.28
