@@ -289,6 +289,8 @@ def update_preferences():
     pref.spice_level = data.get('spiceLevel', pref.spice_level)
     pref.allergies = data.get('allergies', pref.allergies)
     pref.health_goals = data.get('goals', pref.health_goals)
+    pref.conditions = data.get('conditions', pref.conditions)
+    pref.notes = data.get('notes', pref.notes)
     
     pref.save()
     return jsonify(pref.to_json()), 200
@@ -555,4 +557,4 @@ def delete_saved_recipe(id):
     return jsonify({"message": "Recipe removed from saved"}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)

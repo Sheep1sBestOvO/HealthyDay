@@ -1,7 +1,7 @@
 import requests
 import json
 
-BASE_URL = "http://localhost:5000/api/admin/seed-common"
+BASE_URL = "http://localhost:5001/api/admin/seed-common"
 
 def seed():
     try:
@@ -17,4 +17,3 @@ def seed():
 
 if __name__ == "__main__":
     seed()
-

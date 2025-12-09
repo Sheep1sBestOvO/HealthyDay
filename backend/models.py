@@ -93,6 +93,8 @@ class UserPreference(db.Document):
     spice_level = db.StringField(default="Medium") # e.g., Mild, Medium, Spicy
     allergies = db.ListField(db.StringField(), default=[]) # e.g., ["Peanuts", "Dairy"]
     health_goals = db.ListField(db.StringField(), default=[]) # e.g., ["Weight Loss", "Muscle Gain"]
+    conditions = db.ListField(db.StringField(), default=[]) # e.g., ["Diabetes", "Hypertension"]
+    notes = db.StringField() # free-form notes
     updated_at = db.DateTimeField(default=datetime.datetime.utcnow)
 
     def to_json(self):
@@ -100,7 +102,9 @@ class UserPreference(db.Document):
             "dietType": self.diet_type,
             "spiceLevel": self.spice_level,
             "allergies": self.allergies,
-            "goals": self.health_goals
+            "goals": self.health_goals,
+            "conditions": self.conditions,
+            "notes": self.notes
         }
 
 class DailyCalorieLog(db.Document):
