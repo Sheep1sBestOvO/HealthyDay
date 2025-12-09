@@ -430,6 +430,21 @@ def get_ingredient_nutrition():
         return jsonify({"error": "Ingredient name is required"}), 400
     
     try:
+        # First, try to use existing ingredient data (common or user-defined) to avoid LLM call
+        current_user_id = get_jwt_identity()
+        user = User.objects(id=current_user_id).first()
+
+        common = CommonIngredient.objects(name__iexact=ingredient_name).first()
+        user_defined = UserDefinedIngredient.objects(user=user, name__iexact=ingredient_name).first()
+        source = common or user_defined
+        if source:
+            return jsonify({
+                "calories": float(source.calories or 0),
+                "protein": float(source.protein or 0),
+                "carbs": float(source.carbs or 0),
+                "fat": float(source.fat or 0)
+            }), 200
+
         nutrition = get_nutrition_info(ingredient_name)
         if nutrition:
             # Check if it's a rate limit error
@@ -438,6 +453,11 @@ def get_ingredient_nutrition():
                     "error": "rate_limit",
                     "message": nutrition.get("message", "API rate limit reached. Please try again later.")
                 }), 429
+            if isinstance(nutrition, dict) and nutrition.get("error") == "missing_api_key":
+                return jsonify({
+                    "error": "missing_api_key",
+                    "message": "GROQ_API_KEY is not set on the backend."
+                }), 503
             return jsonify(nutrition), 200
         else:
             return jsonify({"error": "Failed to get nutrition information"}), 500

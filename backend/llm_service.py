@@ -339,6 +339,11 @@ suggestedExpiryDate should be in YYYY-MM-DD format, representing a typical expir
     Return ONLY the JSON object, no additional text or markdown."""
     
     try:
+        api_key = os.getenv("GROQ_API_KEY", "")
+        if not api_key:
+            # Graceful failure when API key isn't configured
+            return {"error": "missing_api_key", "message": "GROQ_API_KEY is not set."}
+
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -383,4 +388,3 @@ suggestedExpiryDate should be in YYYY-MM-DD format, representing a typical expir
             return {"error": "rate_limit", "message": "API rate limit reached. Please try again later."}
         
         return None
-

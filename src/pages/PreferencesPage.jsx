@@ -7,16 +7,19 @@ export default function PreferencesPage() {
     dietType: "No Restriction",
     spiceLevel: "Medium",
     allergies: [],
-    goals: []
+    goals: [],
+    conditions: []
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [otherCondition, setOtherCondition] = useState("");
 
   // Options
   const dietTypes = ["No Restriction", "Vegan", "Vegetarian", "Keto", "Paleo", "Gluten-Free"];
-  const spiceLevels = ["Mild", "Medium", "Spicy", "Very Spicy"];
+  const spiceLevels = ["Not Spicy", "Mild", "Medium", "Spicy", "Very Spicy"];
   const allergyOptions = ["Peanuts", "Tree Nuts", "Dairy", "Eggs", "Soy", "Shellfish", "Fish"];
   const goalOptions = ["Weight Loss", "Muscle Gain", "Maintain Weight", "Eat More Veggies", "Low Carb"];
+  const conditionOptions = ["Diabetes", "Hypertension", "High Cholesterol", "Kidney Disease", "Heart Disease", "PCOS"];
 
   useEffect(() => {
     loadPrefs();
@@ -30,7 +33,8 @@ export default function PreferencesPage() {
       setPrefs({
         ...data,
         allergies: data.allergies || [],
-        goals: data.goals || []
+        goals: data.goals || [],
+        conditions: data.conditions || []
       });
     } catch (err) {
       console.error("Failed to load preferences", err);
@@ -151,6 +155,46 @@ export default function PreferencesPage() {
                   {goal}
                 </button>
               ))}
+            </div>
+          </section>
+
+          {/* 5. Common Conditions */}
+          <section className="pref-section">
+            <h3>Common Conditions</h3>
+            <div className="chips-container">
+              {conditionOptions.map(condition => (
+                <button
+                  key={condition}
+                  type="button"
+                  className={`chip-btn multi ${prefs.conditions.includes(condition) ? "active" : ""}`}
+                  onClick={() => toggleSelection("conditions", condition)}
+                >
+                  {condition}
+                </button>
+              ))}
+            </div>
+            <div className="other-input-row">
+              <input
+                type="text"
+                className="text-input"
+                placeholder="Other condition (e.g., gout, GERD)"
+                value={otherCondition}
+                onChange={(e) => setOtherCondition(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => {
+                  const trimmed = otherCondition.trim();
+                  if (!trimmed) return;
+                  if (!prefs.conditions.includes(trimmed)) {
+                    setPrefs(prev => ({ ...prev, conditions: [...prev.conditions, trimmed] }));
+                  }
+                  setOtherCondition("");
+                }}
+              >
+                Add
+              </button>
             </div>
           </section>
 
