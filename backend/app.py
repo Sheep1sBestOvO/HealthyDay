@@ -102,6 +102,64 @@ def login():
     else:
         return jsonify({"error": "Invalid username or password"}), 401
 
+@app.route('/api/change-password', methods=['POST'])
+@jwt_required()
+def change_password():
+    """
+    Change password for the authenticated user.
+    Requires current password and a new password.
+    """
+    current_user_id = get_jwt_identity()
+    user = User.objects(id=current_user_id).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.json or {}
+    current_password = data.get('currentPassword', '')
+    new_password = data.get('newPassword', '')
+
+    if not current_password or not new_password:
+        return jsonify({"error": "Both currentPassword and newPassword are required"}), 400
+
+    if not check_password_hash(user.password, current_password):
+        return jsonify({"error": "Current password is incorrect"}), 401
+
+    if current_password == new_password:
+        return jsonify({"error": "New password must be different from current password"}), 400
+
+    try:
+        user.password = generate_password_hash(new_password)
+        user.save()
+        return jsonify({"message": "Password updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/change-password-username', methods=['POST'])
+def change_password_by_username():
+    """
+    Change password using only username (no auth). Intended for simple recovery flow.
+    """
+    data = request.json or {}
+    username = data.get('username', '').strip()
+    new_password = data.get('newPassword', '')
+
+    if not username or not new_password:
+        return jsonify({"error": "username and newPassword are required"}), 400
+
+    user = User.objects(username=username).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if check_password_hash(user.password, new_password):
+        return jsonify({"error": "New password must be different from current password"}), 400
+
+    try:
+        user.password = generate_password_hash(new_password)
+        user.save()
+        return jsonify({"message": "Password updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # -------------------------
 # Ingredient Routes (User)
 # -------------------------

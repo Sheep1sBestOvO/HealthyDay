@@ -1,13 +1,16 @@
 import { useState } from "react";
 import "../App.css";
-import { loginUser, registerUser } from "../api";
+import { loginUser, registerUser, changePasswordByUsername } from "../api";
 
 export default function LoginPage({ onLogin }) {
   const [isRegistering, setIsRegistering] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [changeMessage, setChangeMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,6 +43,30 @@ export default function LoginPage({ onLogin }) {
     setError("");
     setUsername("");
     setPassword("");
+    setNewPassword("");
+    setChangingPassword(false);
+    setChangeMessage("");
+  };
+
+  const handleChangePassword = async () => {
+    setError("");
+    setChangeMessage("");
+    if (!username.trim() || !newPassword.trim()) {
+      setError("Please enter username and new password.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await changePasswordByUsername(username.trim(), newPassword.trim());
+      setChangeMessage("Password updated. Please log in with your new password.");
+      setPassword("");
+      setNewPassword("");
+      setChangingPassword(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -95,6 +122,59 @@ export default function LoginPage({ onLogin }) {
             </button>
           </div>
 
+          {!isRegistering && (
+            <div className="auth-switch" style={{ marginTop: "0.5rem" }}>
+              <p>Need to change password?</p>
+              {!changingPassword ? (
+                <button
+                  type="button"
+                  className="btn-text-switch"
+                  onClick={() => {
+                    setChangingPassword(true);
+                    setChangeMessage("");
+                    setError("");
+                  }}
+                  disabled={loading}
+                >
+                  Change password
+                </button>
+              ) : (
+                <div className="change-password-box">
+                  <input
+                    type="password"
+                    className="modern-input"
+                    placeholder="New password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    className="btn-auth-submit"
+                    onClick={handleChangePassword}
+                    disabled={loading}
+                    style={{ marginTop: "0.5rem" }}
+                  >
+                    {loading ? "Saving..." : "Save new password"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-text-switch"
+                    onClick={() => {
+                      setChangingPassword(false);
+                      setNewPassword("");
+                      setChangeMessage("");
+                    }}
+                    disabled={loading}
+                    style={{ marginTop: "0.25rem" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="auth-switch">
             <p>
               {isRegistering ? "Already have an account?" : "Don't have an account?"}
@@ -103,6 +183,10 @@ export default function LoginPage({ onLogin }) {
               {isRegistering ? "Login here" : "Create account"}
             </button>
           </div>
+
+          {changeMessage && !isRegistering && (
+            <div className="success-pill">✅ {changeMessage}</div>
+          )}
         </form>
       </div>
     </div>

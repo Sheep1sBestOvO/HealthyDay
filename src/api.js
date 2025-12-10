@@ -243,6 +243,23 @@ export async function saveRecipe(recipe) {
   return res.json();
 }
 
+// -----------------------------
+// Account
+// -----------------------------
+
+export async function changePasswordByUsername(username, newPassword) {
+  const res = await fetch(`${API_BASE}/change-password-username`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, newPassword })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to change password");
+  }
+  return res.json();
+}
+
 export async function deleteSavedRecipe(id) {
   const res = await fetch(`${API_BASE}/saved-recipes/${id}`, {
     method: "DELETE",
