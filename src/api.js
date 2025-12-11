@@ -171,7 +171,7 @@ export async function generateRecipes(mealType = "Dinner") {
   await checkResponse(res);
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.error || "Failed to generate recipes");
+    throw new Error(err.error || err.message || "Failed to generate recipes");
   }
   return res.json();
 }
@@ -198,11 +198,11 @@ export async function parseIngredientList(text) {
 // Nutrition Info API (LLM)
 // -----------------------------
 
-export async function getNutritionInfo(ingredientName) {
+export async function getNutritionInfo(ingredientName, quantity, unit) {
   const res = await fetch(`${API_BASE}/ingredients/nutrition`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ name: ingredientName }),
+    body: JSON.stringify({ name: ingredientName, quantity, unit }),
   });
   await checkResponse(res);
   if (!res.ok) {

@@ -16,6 +16,7 @@ from models import (
     DailyCalorieLog
 )
 from llm_service import generate_recipes, get_nutrition_info
+from typing import Optional
 
 # Load environment variables
 env_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -483,6 +484,8 @@ def get_ingredient_nutrition():
     """Get nutrition info for an ingredient using LLM"""
     data = request.json
     ingredient_name = data.get('name', '').strip()
+    quantity = data.get('quantity')
+    unit = data.get('unit', '').strip()
     
     if not ingredient_name:
         return jsonify({"error": "Ingredient name is required"}), 400
@@ -496,12 +499,15 @@ def get_ingredient_nutrition():
         user_defined = UserDefinedIngredient.objects(user=user, name__iexact=ingredient_name).first()
         source = common or user_defined
         if source:
-            return jsonify({
+            base = {
                 "calories": float(source.calories or 0),
                 "protein": float(source.protein or 0),
                 "carbs": float(source.carbs or 0),
                 "fat": float(source.fat or 0)
-            }), 200
+            }
+            # If quantity provided, scale totals
+            total = _compute_totals(base, quantity, unit)
+            return jsonify({**base, **({"total": total} if total else {})}), 200
 
         nutrition = get_nutrition_info(ingredient_name)
         if nutrition:
@@ -516,7 +522,8 @@ def get_ingredient_nutrition():
                     "error": "missing_api_key",
                     "message": "GROQ_API_KEY is not set on the backend."
                 }), 503
-            return jsonify(nutrition), 200
+            total = _compute_totals(nutrition, quantity, unit)
+            return jsonify({**nutrition, **({"total": total} if total else {})}), 200
         else:
             return jsonify({"error": "Failed to get nutrition information"}), 500
     except Exception as e:
@@ -527,6 +534,40 @@ def get_ingredient_nutrition():
                 "message": "API rate limit reached. Please try again later."
             }), 429
         return jsonify({"error": str(e)}), 500
+
+def _compute_totals(base: dict, quantity, unit: Optional[str]):
+    """
+    Scale per-100g macros to total based on quantity and unit.
+    Returns None if no valid quantity provided.
+    """
+    try:
+        qty = float(quantity)
+    except (TypeError, ValueError):
+        return None
+    if qty <= 0:
+        return None
+    
+    unit = (unit or "").lower()
+    grams = None
+    if unit in ["g", "gram", "grams"]:
+        grams = qty
+    elif unit in ["kg", "kilogram", "kilograms"]:
+        grams = qty * 1000
+    elif unit in ["ml", "milliliter", "milliliters"]:
+        grams = qty  # rough assumption ml ≈ g for many foods
+    elif unit in ["l", "liter", "liters"]:
+        grams = qty * 1000
+    
+    factor = grams / 100 if grams is not None else 1
+    
+    return {
+        "quantity": qty,
+        "unit": unit,
+        "calories": round((base.get("calories") or 0) * factor, 2),
+        "protein": round((base.get("protein") or 0) * factor, 2),
+        "carbs": round((base.get("carbs") or 0) * factor, 2),
+        "fat": round((base.get("fat") or 0) * factor, 2)
+    }
 
 # -------------------------
 # Recipe Generation Routes (LLM)

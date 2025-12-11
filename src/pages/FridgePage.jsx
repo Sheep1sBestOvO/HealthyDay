@@ -117,7 +117,14 @@ export default function FridgePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const nameToUse = newIng.name || ingredientSearch; // Use search input if name empty
-    if (!nameToUse.trim()) return;
+    if (!nameToUse.trim()) {
+      alert("Please enter ingredient name.");
+      return;
+    }
+    if (!newIng.quantity || isNaN(parseFloat(newIng.quantity))) {
+      alert("Please enter a valid quantity before saving.");
+      return;
+    }
 
     try {
       const payload = { ...newIng, name: nameToUse };
@@ -254,9 +261,13 @@ export default function FridgePage() {
                       alert("Please enter an ingredient name first.");
                       return;
                     }
+                    if (!newIng.quantity || isNaN(parseFloat(newIng.quantity))) {
+                      alert("Please enter a valid quantity before checking nutrition.");
+                      return;
+                    }
 
                     // Check cache first
-                    const cacheKey = `nutrition_${searchTerm.toLowerCase()}`;
+                    const cacheKey = `nutrition_${searchTerm.toLowerCase()}_${newIng.quantity}_${newIng.unit || ""}`;
                     const cached = localStorage.getItem(cacheKey);
                     const cacheTime = localStorage.getItem(`${cacheKey}_timestamp`);
                     const now = Date.now();
@@ -267,10 +278,10 @@ export default function FridgePage() {
                         const nutrition = JSON.parse(cached);
                         setNewIng(prev => ({
                           ...prev,
-                          calories: nutrition.calories || prev.calories,
-                          protein: nutrition.protein || prev.protein,
-                          carbs: nutrition.carbs || prev.carbs,
-                          fat: nutrition.fat || prev.fat,
+                          calories: (nutrition.total && nutrition.total.calories) || nutrition.calories || prev.calories,
+                          protein: (nutrition.total && nutrition.total.protein) || nutrition.protein || prev.protein,
+                          carbs: (nutrition.total && nutrition.total.carbs) || nutrition.carbs || prev.carbs,
+                          fat: (nutrition.total && nutrition.total.fat) || nutrition.fat || prev.fat,
                           expiryDate: nutrition.suggestedExpiryDate || prev.expiryDate
                         }));
                         return;
@@ -281,7 +292,7 @@ export default function FridgePage() {
 
                     setFetchingNutrition(true);
                     try {
-                      const nutrition = await getNutritionInfo(searchTerm);
+                      const nutrition = await getNutritionInfo(searchTerm, newIng.quantity, newIng.unit);
                       if (nutrition && !nutrition.error) {
                         // Cache the result
                         localStorage.setItem(cacheKey, JSON.stringify(nutrition));
@@ -289,10 +300,10 @@ export default function FridgePage() {
                         
                         setNewIng(prev => ({
                           ...prev,
-                          calories: nutrition.calories || prev.calories,
-                          protein: nutrition.protein || prev.protein,
-                          carbs: nutrition.carbs || prev.carbs,
-                          fat: nutrition.fat || prev.fat,
+                          calories: (nutrition.total && nutrition.total.calories) || nutrition.calories || prev.calories,
+                          protein: (nutrition.total && nutrition.total.protein) || nutrition.protein || prev.protein,
+                          carbs: (nutrition.total && nutrition.total.carbs) || nutrition.carbs || prev.carbs,
+                          fat: (nutrition.total && nutrition.total.fat) || nutrition.fat || prev.fat,
                           expiryDate: nutrition.suggestedExpiryDate || prev.expiryDate
                         }));
                       } else if (nutrition && nutrition.error === "rate_limit") {

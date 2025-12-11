@@ -150,7 +150,7 @@ export default function RecipeResultPage() {
               className={`meal-tab ${mealType === type ? "active" : ""}`}
               onClick={() => {
                 setMealType(type);
-                // Check if we have cached recipes for this meal type
+                // Load cached recipes if fresh; otherwise wait for user to hit Generate
                 const storageKey = `recipes_${type}`;
                 const stored = localStorage.getItem(storageKey);
                 if (stored) {
@@ -158,17 +158,15 @@ export default function RecipeResultPage() {
                     const parsed = JSON.parse(stored);
                     const timestamp = parsed.timestamp || 0;
                     const now = Date.now();
-                    // Use cache if less than 1 hour old
                     if (now - timestamp < 60 * 60 * 1000 && parsed.recipes && parsed.recipes.length > 0) {
                       setRecipes(parsed.recipes);
-                      return; // Don't generate new recipes
+                      return;
                     }
                   } catch (e) {
                     console.error("Failed to parse stored recipes:", e);
                   }
                 }
-                // No cache or cache expired, generate new recipes
-                handleGenerate(type);
+                setRecipes([]); // clear view until user generates
               }}
               disabled={loading}
             >
@@ -177,10 +175,16 @@ export default function RecipeResultPage() {
           ))}
         </div>
         
-        {/* Refresh Button */}
-        <button className="btn-refresh" onClick={handleRefresh} disabled={loading}>
-          🔄 Shuffle
-        </button>
+        <div style={{display: 'flex', gap: '0.5rem'}}>
+          <button
+            className="btn-primary"
+            style={{ padding: "0.85rem 1.75rem", fontSize: "1rem" }}
+            onClick={() => handleGenerate(mealType)}
+            disabled={loading}
+          >
+            {loading ? "Generating..." : "Generate"}
+          </button>
+        </div>
       </div>
 
       <main className="recipe-page-content">
